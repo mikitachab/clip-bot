@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "yt-clip-bot"
+version = "0.1.0"
+description = "Telegram bot for making youtube clips"
+authors = ["Mikita Chabatarovich <mikita.chabatarovich@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+aiogram = "^2.12"
+python-dotenv = "^0.15.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
