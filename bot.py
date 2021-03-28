@@ -21,7 +21,6 @@ dotenv.load_dotenv()
 storage = MemoryStorage()
 bot = Bot(token=os.getenv("BOT_TOKEN"))
 dp = Dispatcher(bot, storage=storage)
-
 timecode_cb = CallbackData("start", "start_choice")
 
 class Form(StatesGroup):
@@ -80,8 +79,10 @@ async def process_duration(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
             data["duration"] = int(message.text)
         # await message.reply(f"{data["url"]} {data["duration"]}")
-        url = data["url"]
-        duration = data["duration"]
+        # url = data["url"]
+        # duration = data["duration"]
+
+        await Form.next()
 
         keyboard = types.InlineKeyboardMarkup().add(
             types.InlineKeyboardButton("use_timecode", callback_data=timecode_cb.new(start_choice="use_timecode")),
@@ -90,20 +91,24 @@ async def process_duration(message: types.Message, state: FSMContext):
         
         await message.reply(f"Start question?", reply_markup=keyboard)
 
-        await state.finish()
-
-@dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"))
-async def use_timecode(query: types.CallbackQuery, callback_data: dict):
+@dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
+async def use_timecode(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    async with state.proxy() as data:
+        logging.info(data)
     await bot.edit_message_text("you choosed use_timecode",  query.from_user.id, query.message.message_id)
 
 
-@dp.callback_query_handler(timecode_cb.filter(start_choice="from_start"))
+@dp.callback_query_handler(timecode_cb.filter(start_choice="from_start"), state=Form.start)
 async def from_start(query: types.CallbackQuery, callback_data: dict):
+    async with state.proxy() as data:
+        logging.info(data)
     await bot.edit_message_text("you choosed from_start",  query.from_user.id, query.message.message_id)
 
 
-@dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"))
+@dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
 async def provide_timecode(query: types.CallbackQuery, callback_data: dict):
+    async with state.proxy() as data:
+        logging.info(data)
     await bot.edit_message_text("you choosed provide_timecode",  query.from_user.id, query.message.message_id)
 
 
