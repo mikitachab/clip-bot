@@ -2,7 +2,6 @@ import argparse
 import os
 import logging
 
-
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
@@ -70,6 +69,14 @@ def make_clip():
         # await message.answer_video(open(output_file, "rb"))
 
 
+def get_keyboard():
+    return types.InlineKeyboardMarkup().add(
+        types.InlineKeyboardButton("use_timecode", callback_data=timecode_cb.new(start_choice="use_timecode")),
+        types.InlineKeyboardButton("from_start", callback_data=timecode_cb.new(start_choice="from_start")),
+        types.InlineKeyboardButton("provide_timecode", callback_data=timecode_cb.new(start_choice="provide_timecode"))
+    )
+
+
 @dp.message_handler(state=Form.duration)
 async def process_duration(message: types.Message, state: FSMContext):
     if not message.text.isdigit():
@@ -78,24 +85,18 @@ async def process_duration(message: types.Message, state: FSMContext):
     else:
         async with state.proxy() as data:
             data["duration"] = int(message.text)
-        # await message.reply(f"{data["url"]} {data["duration"]}")
-        # url = data["url"]
-        # duration = data["duration"]
 
         await Form.next()
 
-        keyboard = types.InlineKeyboardMarkup().add(
-            types.InlineKeyboardButton("use_timecode", callback_data=timecode_cb.new(start_choice="use_timecode")),
-            types.InlineKeyboardButton("from_start", callback_data=timecode_cb.new(start_choice="from_start")),
-            types.InlineKeyboardButton("provide_timecode", callback_data=timecode_cb.new(start_choice="provide_timecode")))
-        
-        await message.reply(f"Start question?", reply_markup=keyboard)
+        await message.reply(f"Start question?", reply_markup=get_keyboard())
+
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
 async def use_timecode(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
     async with state.proxy() as data:
         logging.info(data)
     await bot.edit_message_text("you choosed use_timecode",  query.from_user.id, query.message.message_id)
+    await state.finish()
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="from_start"), state=Form.start)
@@ -103,6 +104,7 @@ async def from_start(query: types.CallbackQuery, callback_data: dict):
     async with state.proxy() as data:
         logging.info(data)
     await bot.edit_message_text("you choosed from_start",  query.from_user.id, query.message.message_id)
+    await state.finish()
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
@@ -110,6 +112,7 @@ async def provide_timecode(query: types.CallbackQuery, callback_data: dict):
     async with state.proxy() as data:
         logging.info(data)
     await bot.edit_message_text("you choosed provide_timecode",  query.from_user.id, query.message.message_id)
+    await state.finish()
 
 
 if __name__ == "__main__":
