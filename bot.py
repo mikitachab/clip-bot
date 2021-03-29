@@ -62,13 +62,6 @@ async def process_url(message: types.Message, state: FSMContext):
     await message.reply("How long clip should be in seconds?")
 
 
-def make_clip():
-    with fsutils.mkstemp(".mp4") as output_file:
-        video = yt.YouTubeVideo(url)
-        video.make_clip(duration, output_file)
-        # await message.answer_video(open(output_file, "rb"))
-
-
 def get_keyboard():
     return types.InlineKeyboardMarkup().add(
         types.InlineKeyboardButton("use_timecode", callback_data=timecode_cb.new(start_choice="use_timecode")),
@@ -100,10 +93,16 @@ async def use_timecode(query: types.CallbackQuery, callback_data: dict, state: F
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="from_start"), state=Form.start)
-async def from_start(query: types.CallbackQuery, callback_data: dict):
-    async with state.proxy() as data:
-        logging.info(data)
+async def from_start(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
     await bot.edit_message_text("you choosed from_start",  query.from_user.id, query.message.message_id)
+    async with state.proxy() as data:
+        url = data["url"]
+        duration = data["duration"]
+        start = 0
+        with fsutils.mkstemp(".mp4") as video_file:
+            video = yt.YouTubeVideo(url)
+            video.make_clip(duration, video_file)
+            await query.message.answer_video(open(video_file, "rb"))
     await state.finish()
 
 
