@@ -167,11 +167,29 @@ async def from_start(query: types.CallbackQuery, callback_data: dict, state: FSM
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
-async def provide_timecode(query: types.CallbackQuery, callback_data: dict):
+async def provide_timecode(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
     async with state.proxy() as data:
         logging.info(data)
-    await bot.edit_message_text("you choosed provide_timecode", query.from_user.id, query.message.message_id)
-    await state.finish()
+    await bot.edit_message_text("you choosed to provide timecode", query.from_user.id, query.message.message_id)
+    await bot.send_message(query.message.chat.id, "Please provide timecode in seconds")
+    
+
+@dp.message_handler(state=Form.start)
+async def process_timecode(message: types.Message, state: FSMContext):
+    logging.info(message.text)
+    if not message.text.isdigit():
+        await message.reply("Timecode gotta be a number.\nPlease provide timecode in seconds? (digits only)")
+    else:
+        async with state.proxy() as data:
+            url = data["url"]
+            duration = data["duration"]
+            start = int(message.text)
+            with mkstemp(".mp4") as video_file:
+                yt_url = YTUrl(url)
+                video = YouTubeVideo(yt_url)
+                video.make_clip(duration, video_file, start=start)
+                await message.answer_video(open(video_file, "rb"))
+        await state.finish()
 
 
 if __name__ == "__main__":
