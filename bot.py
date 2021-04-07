@@ -49,11 +49,17 @@ class YTUrl:
         return 0
 
 
-class YouTubeVideo:
+class YTVideo:
     def __init__(self, url: YTUrl):
         self._url = url
 
-    def make_clip(self, duration: int, out_file: str, start=None):
+    @contextlib.contextmanager
+    def make_clip_temp(self, duration: int, start=None):
+        with mkstemp(".mp4") as video_file:
+            self._make_clip(duration, video_file, start)
+            yield video_file
+
+    def _make_clip(self, duration: int, out_file: str, start=None):
         start = start if start is not None else self._url.timecode()
         # comes from https://old.reddit.com/r/youtubedl/comments/b67xh5/downloading_part_of_a_youtube_video/ejv5ye7/
         cmd = f"ffmpeg -ss {start} -i $(youtube-dl -f 22 -g {self._url.value()}) -acodec copy -vcodec copy -t {duration} {out_file} -y"
@@ -125,7 +131,6 @@ def get_keyboard(timecode):
 @dp.message_handler(state=Form.duration)
 async def process_duration(message: types.Message, state: FSMContext):
     if not message.text.isdigit():
-        logging.info("handle invalid duration")
         await message.reply("Duration gotta be a number.\nHow long clip should be in seconds? (digits only)")
     else:
         async with state.proxy() as data:
@@ -136,59 +141,38 @@ async def process_duration(message: types.Message, state: FSMContext):
         await message.reply(f"Start question?", reply_markup=get_keyboard(yt_url.timecode()))
 
 
+@dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
+async def provide_timecode(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    await bot.edit_message_text("you choosed to provide timecode", query.from_user.id, query.message.message_id)
+    await bot.send_message(query.message.chat.id, "Please provide timecode in seconds")
+
+
+async def make_and_send_clip(state: FSMContext, chat_id, start=None):
+    async with state.proxy() as data:
+        with YTVideo(YTUrl(data["url"])).make_clip_temp(data["duration"], start=start) as video_file:
+            await bot.send_video(chat_id, open(video_file, "rb"))
+
+
 @dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
 async def use_timecode(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
     await bot.edit_message_text("you choosed use_timecode", query.from_user.id, query.message.message_id)
-    async with state.proxy() as data:
-        url = data["url"]
-        duration = data["duration"]
-        start = 0
-        with mkstemp(".mp4") as video_file:
-            yt_url = YTUrl(url)
-            video = YouTubeVideo(yt_url)
-            video.make_clip(duration, video_file)
-            await query.message.answer_video(open(video_file, "rb"))
+    await make_and_send_clip(state, query.message.chat.id)
     await state.finish()
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="from_start"), state=Form.start)
 async def from_start(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
     await bot.edit_message_text("you choosed from_start", query.from_user.id, query.message.message_id)
-    async with state.proxy() as data:
-        url = data["url"]
-        duration = data["duration"]
-        start = 0
-        with mkstemp(".mp4") as video_file:
-            yt_url = YTUrl(url)
-            video = YouTubeVideo(yt_url)
-            video.make_clip(duration, video_file, start=0)
-            await query.message.answer_video(open(video_file, "rb"))
+    await make_and_send_clip(state, query.message.chat.id, start=0)
     await state.finish()
 
 
-@dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
-async def provide_timecode(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
-    async with state.proxy() as data:
-        logging.info(data)
-    await bot.edit_message_text("you choosed to provide timecode", query.from_user.id, query.message.message_id)
-    await bot.send_message(query.message.chat.id, "Please provide timecode in seconds")
-    
-
 @dp.message_handler(state=Form.start)
 async def process_timecode(message: types.Message, state: FSMContext):
-    logging.info(message.text)
     if not message.text.isdigit():
         await message.reply("Timecode gotta be a number.\nPlease provide timecode in seconds? (digits only)")
     else:
-        async with state.proxy() as data:
-            url = data["url"]
-            duration = data["duration"]
-            start = int(message.text)
-            with mkstemp(".mp4") as video_file:
-                yt_url = YTUrl(url)
-                video = YouTubeVideo(yt_url)
-                video.make_clip(duration, video_file, start=start)
-                await message.answer_video(open(video_file, "rb"))
+        await make_and_send_clip(state, message.chat.id, start=int(message.text))
         await state.finish()
 
 
