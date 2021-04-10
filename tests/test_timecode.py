@@ -1,6 +1,6 @@
 import pytest
 
-from timecode import make_timecode, SecondsTimecode, FormattedTimecode, InvalidTimecodeError
+from bot.timecode import make_timecode, SecondsTimecode, FormattedTimecode, InvalidTimecodeError
 
 
 @pytest.mark.parametrize(

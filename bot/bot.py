@@ -1,14 +1,11 @@
-import argparse
 import contextlib
-import dataclasses
 import os
 import logging
 import subprocess
 import re
 import tempfile
-from typing import Optional
 
-from aiogram import Bot, Dispatcher, types, executor
+from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
@@ -62,7 +59,7 @@ class YTVideo:
     def _make_clip(self, duration: int, out_file: str, start=None):
         start = start if start is not None else self._url.timecode()
         # comes from https://old.reddit.com/r/youtubedl/comments/b67xh5/downloading_part_of_a_youtube_video/ejv5ye7/
-        cmd = f"ffmpeg -ss {start} -i $(youtube-dl -f 22 -g {self._url.value()}) -acodec copy -vcodec copy -t {duration} {out_file} -y"
+        cmd = f"ffmpeg -ss {start} -i $(youtube-dl -f 22 -g {self._url.value()}) -acodec copy -vcodec copy -t {duration} {out_file} -y"  # noqa
         logging.info(cmd)
         p = subprocess.Popen(cmd, shell=True)
         p.wait()
@@ -138,7 +135,7 @@ async def process_duration(message: types.Message, state: FSMContext):
             yt_url = YTUrl(data["url"])
 
         await Form.next()
-        await message.reply(f"Start question?", reply_markup=get_keyboard(yt_url.timecode()))
+        await message.reply("Start question?", reply_markup=get_keyboard(yt_url.timecode()))
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
@@ -174,7 +171,3 @@ async def process_timecode(message: types.Message, state: FSMContext):
     else:
         await make_and_send_clip(state, message.chat.id, start=int(message.text))
         await state.finish()
-
-
-if __name__ == "__main__":
-    executor.start_polling(dp, skip_updates=True)

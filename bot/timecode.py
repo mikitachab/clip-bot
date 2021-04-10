@@ -10,7 +10,7 @@ class TimecodeInterface(abc.ABC):
     @property
     @abc.abstractmethod
     def seconds(self) -> int:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class SecondsTimecode(TimecodeInterface):
