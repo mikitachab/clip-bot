@@ -1,0 +1,32 @@
+name: CI with tox
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v1
+      - name: PIP upgrade
+        run: python -m pip install --upgrade pip
+      - name: Install tox
+        run: pip install tox
+      - name: Install poetry
+        run: pip install poetry
+      - name: Run tests
+        run: tox -e test
+
+  linter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Set Up Python
+        uses: actions/setup-python@v1
+      - name: Install tox
+        run: pip install tox
+      - name: Run linter
+        run: |
+          tox -e lint
