@@ -1,5 +1,5 @@
-import re
 import functools
+from urllib.parse import urlparse, parse_qs
 
 
 class YTUrl:
@@ -11,7 +11,4 @@ class YTUrl:
 
     @functools.cached_property
     def timecode(self) -> int:
-        match = re.search(r".+\?t=(\d+)", self._url)
-        if match and hasattr(match, "groups"):
-            return match.groups()[0]
-        return 0
+        return parse_qs(urlparse(self._url).query).get("t", ["0"])[0]

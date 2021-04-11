@@ -101,7 +101,7 @@ async def provide_timecode(query: types.CallbackQuery, callback_data: dict, stat
     await bot.send_message(query.message.chat.id, "Please provide timecode in seconds")
 
 
-async def make_and_send_clip(state: FSMContext, chat_id: int, start: Optional[int]=None):
+async def make_and_send_clip(state: FSMContext, chat_id: int, start: Optional[int] = None):
     async with state.proxy() as data:
         with yt.YTVideo(yt.YTUrl(data["url"])).make_clip_temp(data["duration"], start=start) as video_file:
             await bot.send_video(chat_id, open(video_file, "rb"))
