@@ -1,9 +1,5 @@
-import contextlib
 import os
 import logging
-import subprocess
-import re
-import tempfile
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -14,6 +10,7 @@ from aiogram.utils.callback_data import CallbackData
 
 import dotenv
 
+import youtube as yt
 
 logging.basicConfig(level=logging.INFO)
 
@@ -22,47 +19,6 @@ storage = MemoryStorage()
 bot = Bot(token=os.getenv("BOT_TOKEN"))
 dp = Dispatcher(bot, storage=storage)
 timecode_cb = CallbackData("start", "start_choice")
-
-
-@contextlib.contextmanager
-def mkstemp(suffix=""):
-    fd, path = tempfile.mkstemp(suffix=suffix)
-    os.close(fd)
-    yield path
-    os.remove(path)
-
-
-class YTUrl:
-    def __init__(self, url):
-        self._url = url
-
-    def value(self):
-        return self._url
-
-    def timecode(self) -> int:
-        match = re.search(r".+\?t=(\d+)", self._url)
-        if match and hasattr(match, "groups"):
-            return match.groups()[0]
-        return 0
-
-
-class YTVideo:
-    def __init__(self, url: YTUrl):
-        self._url = url
-
-    @contextlib.contextmanager
-    def make_clip_temp(self, duration: int, start=None):
-        with mkstemp(".mp4") as video_file:
-            self._make_clip(duration, video_file, start)
-            yield video_file
-
-    def _make_clip(self, duration: int, out_file: str, start=None):
-        start = start if start is not None else self._url.timecode()
-        # comes from https://old.reddit.com/r/youtubedl/comments/b67xh5/downloading_part_of_a_youtube_video/ejv5ye7/
-        cmd = f"ffmpeg -ss {start} -i $(youtube-dl -f 22 -g {self._url.value()}) -acodec copy -vcodec copy -t {duration} {out_file} -y"  # noqa
-        logging.info(cmd)
-        p = subprocess.Popen(cmd, shell=True)
-        p.wait()
 
 
 class Form(StatesGroup):
@@ -132,7 +88,7 @@ async def process_duration(message: types.Message, state: FSMContext):
     else:
         async with state.proxy() as data:
             data["duration"] = int(message.text)
-            yt_url = YTUrl(data["url"])
+            yt_url = yt.YTUrl(data["url"])
 
         await Form.next()
         await message.reply("Start question?", reply_markup=get_keyboard(yt_url.timecode()))
@@ -146,7 +102,7 @@ async def provide_timecode(query: types.CallbackQuery, callback_data: dict, stat
 
 async def make_and_send_clip(state: FSMContext, chat_id, start=None):
     async with state.proxy() as data:
-        with YTVideo(YTUrl(data["url"])).make_clip_temp(data["duration"], start=start) as video_file:
+        with yt.YTVideo(yt.YTUrl(data["url"])).make_clip_temp(data["duration"], start=start) as video_file:
             await bot.send_video(chat_id, open(video_file, "rb"))
 
 

@@ -25,7 +25,6 @@ class SecondsTimecode(TimecodeInterface):
 
 
 class FormattedTimecode(TimecodeInterface):
-
     PATTERN = r"^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$"
 
     def __init__(self, text: str):
@@ -34,7 +33,6 @@ class FormattedTimecode(TimecodeInterface):
         self._minutes: int = 0
         self._houres: int = 0
         self._extracted: bool = False
-
 
     def _extract_timecode(self):
         if self._extracted:
