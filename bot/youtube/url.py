@@ -1,4 +1,5 @@
 import re
+import functools
 
 
 class YTUrl:
@@ -8,6 +9,7 @@ class YTUrl:
     def value(self):
         return self._url
 
+    @functools.cached_property
     def timecode(self) -> int:
         match = re.search(r".+\?t=(\d+)", self._url)
         if match and hasattr(match, "groups"):

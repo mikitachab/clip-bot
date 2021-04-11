@@ -1,5 +1,6 @@
 import os
 import logging
+from typing import Optional
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -91,7 +92,7 @@ async def process_duration(message: types.Message, state: FSMContext):
             yt_url = yt.YTUrl(data["url"])
 
         await Form.next()
-        await message.reply("Start question?", reply_markup=get_keyboard(yt_url.timecode()))
+        await message.reply("Start question?", reply_markup=get_keyboard(yt_url.timecode))
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
@@ -100,7 +101,7 @@ async def provide_timecode(query: types.CallbackQuery, callback_data: dict, stat
     await bot.send_message(query.message.chat.id, "Please provide timecode in seconds")
 
 
-async def make_and_send_clip(state: FSMContext, chat_id, start=None):
+async def make_and_send_clip(state: FSMContext, chat_id: int, start: Optional[int]=None):
     async with state.proxy() as data:
         with yt.YTVideo(yt.YTUrl(data["url"])).make_clip_temp(data["duration"], start=start) as video_file:
             await bot.send_video(chat_id, open(video_file, "rb"))
