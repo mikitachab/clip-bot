@@ -33,9 +33,12 @@ class FormattedTimecode(TimecodeInterface):
         self._seconds: int = 0
         self._minutes: int = 0
         self._houres: int = 0
-        self._extract_timecode()
+        self._extracted: bool = False
+
 
     def _extract_timecode(self):
+        if self._extracted:
+            return
         h, m, s = re.match(self.PATTERN, self._text).groups()
         if h:
             self._houres = int(h)
@@ -43,9 +46,11 @@ class FormattedTimecode(TimecodeInterface):
             self._minutes = int(m)
         if s:
             self._seconds = int(s)
+        self._extracted = True
 
     @property
     def seconds(self) -> int:
+        self._extract_timecode()
         return self._seconds + self._minutes * 60 + self._houres * 3600
 
 
