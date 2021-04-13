@@ -36,6 +36,12 @@ async def start(event: types.Message):
     )
 
 
+@dp.message_handler(commands=["clip"])
+async def clip(message: types.Message):
+    await Form.url.set()
+    await message.reply("Hi, please send video url")
+
+
 @dp.message_handler(state="*", commands="cancel")
 @dp.message_handler(Text(equals="cancel", ignore_case=True), state="*")
 async def cancel_handler(message: types.Message, state: FSMContext):
@@ -48,12 +54,6 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     await message.reply("Cancelled.", reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(commands=["clip"])
-async def clip(message: types.Message):
-    await Form.url.set()
-    await message.reply("Hi, please send video url")
-
-
 @dp.message_handler(state=Form.url)
 async def process_url(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
@@ -61,25 +61,6 @@ async def process_url(message: types.Message, state: FSMContext):
 
     await Form.next()
     await message.reply("How long clip should be in seconds?")
-
-
-def get_keyboard(timecode):
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(types.InlineKeyboardButton("from start", callback_data=timecode_cb.new(start_choice="from_start")))
-    keyboard.add(
-        types.InlineKeyboardButton(
-            "provide timecode",
-            callback_data=timecode_cb.new(start_choice="provide_timecode"),
-        )
-    )
-    if timecode:
-        keyboard.add(
-            types.InlineKeyboardButton(
-                f"use timecode ({timecode})",
-                callback_data=timecode_cb.new(start_choice="use_timecode"),
-            )
-        )
-    return keyboard
 
 
 @dp.message_handler(state=Form.duration)
@@ -99,12 +80,6 @@ async def process_duration(message: types.Message, state: FSMContext):
 async def provide_timecode(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
     await bot.edit_message_text("you choosed to provide timecode", query.from_user.id, query.message.message_id)
     await bot.send_message(query.message.chat.id, "Please provide timecode in seconds")
-
-
-async def make_and_send_clip(state: FSMContext, chat_id: int, start: Optional[int] = None):
-    async with state.proxy() as data:
-        with yt.YTVideo(yt.YTUrl(data["url"])).make_clip_temp(data["duration"], start=start) as video_file:
-            await bot.send_video(chat_id, open(video_file, "rb"))
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
@@ -128,3 +103,28 @@ async def process_timecode(message: types.Message, state: FSMContext):
     else:
         await make_and_send_clip(state, message.chat.id, start=int(message.text))
         await state.finish()
+
+
+async def make_and_send_clip(state: FSMContext, chat_id: int, start: Optional[int] = None):
+    async with state.proxy() as data:
+        with yt.YTVideo(yt.YTUrl(data["url"])).make_clip_temp(data["duration"], start=start) as video_file:
+            await bot.send_video(chat_id, open(video_file, "rb"))
+
+
+def get_keyboard(timecode):
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("from start", callback_data=timecode_cb.new(start_choice="from_start")))
+    keyboard.add(
+        types.InlineKeyboardButton(
+            "provide timecode",
+            callback_data=timecode_cb.new(start_choice="provide_timecode"),
+        )
+    )
+    if timecode:
+        keyboard.add(
+            types.InlineKeyboardButton(
+                f"use timecode ({timecode})",
+                callback_data=timecode_cb.new(start_choice="use_timecode"),
+            )
+        )
+    return keyboard
