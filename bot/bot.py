@@ -12,6 +12,7 @@ from aiogram.utils.callback_data import CallbackData
 import dotenv
 
 import youtube as yt
+import timecode as tc
 
 logging.basicConfig(level=logging.INFO)
 
@@ -37,7 +38,7 @@ async def start(event: types.Message):
 
 
 @dp.message_handler(commands=["clip"])
-async def clip(message: types.Message):
+async def clip_handler(message: types.Message):
     await Form.url.set()
     await message.reply("Hi, please send video url")
 
@@ -60,7 +61,7 @@ async def process_url(message: types.Message, state: FSMContext):
         data["url"] = message.text
 
     await Form.next()
-    await message.reply("How long clip should be in seconds?")
+    await message.reply("How long clip should be")
 
 
 @dp.message_handler(state=Form.duration)
@@ -84,30 +85,38 @@ async def provide_timecode(query: types.CallbackQuery, callback_data: dict, stat
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
 async def use_timecode(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
-    await bot.edit_message_text("you choosed use_timecode", query.from_user.id, query.message.message_id)
+    await bot.edit_message_text("you choosed use timecode", query.from_user.id, query.message.message_id)
     await make_and_send_clip(state, query.message.chat.id)
     await state.finish()
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="from_start"), state=Form.start)
 async def from_start(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
-    await bot.edit_message_text("you choosed from_start", query.from_user.id, query.message.message_id)
-    await make_and_send_clip(state, query.message.chat.id, start=0)
-    await state.finish()
+    await bot.edit_message_text("you choosed from start", query.from_user.id, query.message.message_id)
+    try:
+        await make_and_send_clip(state, query.message.chat.id, start=0)
+        await state.finish()
+    except tc.InvalidTimecodeError:
+        await message.reply("Timecode should has valid format\nPlease provide timecode")
 
 
 @dp.message_handler(state=Form.start)
 async def process_timecode(message: types.Message, state: FSMContext):
-    if not message.text.isdigit():
-        await message.reply("Timecode gotta be a number.\nPlease provide timecode in seconds? (digits only)")
+    try:
+        timecode = tc.make_timecode(message.text)
+    except tc.InvalidTimecodeError:
+        await message.reply("Timecode should has valid format\nPlease provide timecode")
     else:
-        await make_and_send_clip(state, message.chat.id, start=int(message.text))
+        await make_and_send_clip(state, message.chat.id, start=timecode.seconds)
         await state.finish()
 
 
 async def make_and_send_clip(state: FSMContext, chat_id: int, start: Optional[int] = None):
     async with state.proxy() as data:
-        with yt.YTVideo(yt.YTUrl(data["url"])).make_clip_temp(data["duration"], start=start) as video_file:
+        yt_url = yt.YTUrl(data["url"])
+        if start is None:
+            start = tc.make_timecode(yt_url.timecode).seconds
+        with yt.YTVideo(yt_url).make_clip_temp(data["duration"], start=start) as video_file:
             await bot.send_video(chat_id, open(video_file, "rb"))
 
 
@@ -120,7 +129,7 @@ def get_keyboard(timecode):
             callback_data=timecode_cb.new(start_choice="provide_timecode"),
         )
     )
-    if timecode:
+    if timecode and tc.is_valid_timecode(timecode):
         keyboard.add(
             types.InlineKeyboardButton(
                 f"use timecode ({timecode})",

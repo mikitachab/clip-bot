@@ -12,4 +12,4 @@ class YTUrl:
 
     @functools.cached_property
     def timecode(self) -> int:
-        return parse_qs(urlparse(self._url).query).get("t", ["0"])[0]
+        return parse_qs(urlparse(self._url).query).get("t", [None])[0]

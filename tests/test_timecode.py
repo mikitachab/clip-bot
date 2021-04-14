@@ -1,6 +1,6 @@
 import pytest
 
-from bot.timecode import make_timecode, SecondsTimecode, FormattedTimecode, InvalidTimecodeError
+from timecode import make_timecode, SecondsTimecode, FormattedTimecode, InvalidTimecodeError, is_valid_timecode
 
 
 @pytest.mark.parametrize(
@@ -25,6 +25,19 @@ def test_make_timecode(user_input, timecode_cls, expected_seconds):
         "3s5h",
     ],
 )
-def test_raise_on_invalid_timecode(user_input):
+def test_make_timecode_raise_on_invalid_timecode(user_input):
     with pytest.raises(InvalidTimecodeError):
         make_timecode(user_input)
+
+@pytest.mark.parametrize("timecode, is_valid", [
+    ("123", True),
+    ("234s", True),
+    ("30m", True),
+    ("30m20s", True),
+    ("some text", False),
+    ("3s5h", False),
+    ("234s234", False),
+    (None, False)
+])
+def test_is_valid_timecode(timecode, is_valid):
+    assert is_valid_timecode(timecode) == is_valid

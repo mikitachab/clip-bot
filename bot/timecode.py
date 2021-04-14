@@ -58,3 +58,9 @@ def make_timecode(text: str):
     if re.match(FormattedTimecode.PATTERN, text):
         return FormattedTimecode(text)
     raise InvalidTimecodeError
+
+
+def is_valid_timecode(timecode):
+    return timecode is not None and any(
+        re.match(timecode_cls.PATTERN, timecode) for timecode_cls in [SecondsTimecode, FormattedTimecode]
+    )
