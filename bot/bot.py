@@ -97,7 +97,7 @@ async def from_start(query: types.CallbackQuery, callback_data: dict, state: FSM
         await make_and_send_clip(state, query.message.chat.id, start=0)
         await state.finish()
     except tc.InvalidTimecodeError:
-        await message.reply("Timecode should has valid format\nPlease provide timecode")
+        await query.message.reply("Timecode should has valid format\nPlease provide timecode")
 
 
 @dp.message_handler(state=Form.start)
