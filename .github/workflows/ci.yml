@@ -18,7 +18,7 @@ jobs:
       - name: Run tests
         run: tox -e test
 
-  linter:
+  black:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -27,6 +27,32 @@ jobs:
         uses: actions/setup-python@v1
       - name: Install tox
         run: pip install tox
-      - name: Run linter
+      - name: Run black
         run: |
-          tox -e lint
+          tox -e black
+
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Set Up Python
+        uses: actions/setup-python@v1
+      - name: Install tox
+        run: pip install tox
+      - name: Run flake8
+        run: |
+          tox -e flake8
+
+  pylint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Set Up Python
+        uses: actions/setup-python@v1
+      - name: Install tox
+        run: pip install tox
+      - name: Run pylint
+        run: |
+          tox -e pylint
