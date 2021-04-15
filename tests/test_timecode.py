@@ -13,9 +13,9 @@ from timecode import make_timecode, SecondsTimecode, FormattedTimecode, InvalidT
     ],
 )
 def test_make_timecode(user_input, timecode_cls, expected_seconds):
-    t = make_timecode(user_input)
-    assert isinstance(t, timecode_cls)
-    assert t.seconds == expected_seconds
+    timecode = make_timecode(user_input)
+    assert isinstance(timecode, timecode_cls)
+    assert timecode.seconds == expected_seconds
 
 
 @pytest.mark.parametrize(

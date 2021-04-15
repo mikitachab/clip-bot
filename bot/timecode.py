@@ -37,13 +37,13 @@ class FormattedTimecode(TimecodeInterface):
     def _extract_timecode(self):
         if self._extracted:
             return
-        h, m, s = re.match(self.PATTERN, self._text).groups()
-        if h:
-            self._houres = int(h)
-        if m:
-            self._minutes = int(m)
-        if s:
-            self._seconds = int(s)
+        hours, minutes, seconds = re.match(self.PATTERN, self._text).groups()
+        if hours:
+            self._houres = int(hours)
+        if minutes:
+            self._minutes = int(minutes)
+        if seconds:
+            self._seconds = int(seconds)
         self._extracted = True
 
     @property

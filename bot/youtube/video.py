@@ -20,15 +20,17 @@ class YTVideo:
     def _make_clip(self, duration: int, out_file: str, start=None):
         start = start if start is not None else self._url.timecode
         # comes from https://old.reddit.com/r/youtubedl/comments/b67xh5/downloading_part_of_a_youtube_video/ejv5ye7/
-        cmd = f"ffmpeg -ss {start} -i $(youtube-dl -f 22 -g {self._url.value}) -acodec copy -vcodec copy -t {duration} {out_file} -y"  # noqa
+        # pylint: disable=no-member
+        cmd = f"ffmpeg -ss {start} -i $(youtube-dl -f 22 -g {self._url.value})"
+        cmd += f"-acodec copy -vcodec copy -t {duration} {out_file} -y"
         logging.info(cmd)
-        p = subprocess.Popen(cmd, shell=True)
-        p.wait()
+        ffmpeg_proc = subprocess.Popen(cmd, shell=True)
+        ffmpeg_proc.wait()
 
 
 @contextlib.contextmanager
 def mkstemp(suffix=""):
-    fd, path = tempfile.mkstemp(suffix=suffix)
-    os.close(fd)
+    file, path = tempfile.mkstemp(suffix=suffix)
+    os.close(file)
     yield path
     os.remove(path)
