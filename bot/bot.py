@@ -56,7 +56,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(state=Form.url)
-async def process_url(message: types.Message, state: FSMContext):
+async def process_url_handler(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["url"] = message.text
 
@@ -65,7 +65,7 @@ async def process_url(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(state=Form.duration)
-async def process_duration(message: types.Message, state: FSMContext):
+async def process_duration_handler(message: types.Message, state: FSMContext):
     if not message.text.isdigit():
         await message.reply("Duration gotta be a number.\nHow long clip should be in seconds? (digits only)")
     else:
