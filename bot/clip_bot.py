@@ -18,8 +18,8 @@ logging.basicConfig(level=logging.INFO)
 
 dotenv.load_dotenv()
 storage = MemoryStorage()
-cbot = Bot(token=os.getenv("BOT_TOKEN"), validate_token=False)
-dp = Dispatcher(cbot, storage=storage)
+bot = Bot(token=os.getenv("BOT_TOKEN"), validate_token=False)
+dp = Dispatcher(bot, storage=storage)
 timecode_cb = CallbackData("start", "start_choice")
 
 
@@ -78,21 +78,21 @@ async def process_duration_handler(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
-async def provide_timecode(query: types.CallbackQuery):
-    await cbot.edit_message_text("you choosed to provide timecode", query.from_user.id, query.message.message_id)
-    await cbot.send_message(query.message.chat.id, "Please provide timecode in seconds")
+async def provide_timecode_handler(query: types.CallbackQuery):
+    await bot.edit_message_text("you choosed to provide timecode", query.from_user.id, query.message.message_id)
+    await bot.send_message(query.message.chat.id, "Please provide timecode in seconds")
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
-async def use_timecode(query: types.CallbackQuery, state: FSMContext):
-    await cbot.edit_message_text("you choosed use timecode", query.from_user.id, query.message.message_id)
+async def use_timecode_handler(query: types.CallbackQuery, state: FSMContext):
+    await bot.edit_message_text("you choosed use timecode", query.from_user.id, query.message.message_id)
     await make_and_send_clip(state, query.message.chat.id)
     await state.finish()
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="from_start"), state=Form.start)
-async def from_start(query: types.CallbackQuery, state: FSMContext):
-    await cbot.edit_message_text("you choosed from start", query.from_user.id, query.message.message_id)
+async def from_start_handler(query: types.CallbackQuery, state: FSMContext):
+    await bot.edit_message_text("you choosed from start", query.from_user.id, query.message.message_id)
     try:
         await make_and_send_clip(state, query.message.chat.id, start=0)
         await state.finish()
@@ -101,7 +101,7 @@ async def from_start(query: types.CallbackQuery, state: FSMContext):
 
 
 @dp.message_handler(state=Form.start)
-async def process_timecode(message: types.Message, state: FSMContext):
+async def process_timecode_handler(message: types.Message, state: FSMContext):
     try:
         timecode = tc.make_timecode(message.text)
     except tc.InvalidTimecodeError:
@@ -117,7 +117,7 @@ async def make_and_send_clip(state: FSMContext, chat_id: int, start: Optional[in
         if start is None:
             start = tc.make_timecode(yt_url.timecode).seconds
         with yt.YTVideo(yt_url).make_clip_temp(data["duration"], start=start) as video_file:
-            await cbot.send_video(chat_id, open(video_file, "rb"))
+            await bot.send_video(chat_id, open(video_file, "rb"))
 
 
 def get_keyboard(timecode: str):
