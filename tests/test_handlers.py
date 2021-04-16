@@ -20,6 +20,13 @@ def bot_mock(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_start_handler():
+    message_mock = AsyncMock()
+    await clip_bot.start_handler(message=message_mock)
+    message_mock.answer.assert_called()
+
+
+@pytest.mark.asyncio
 async def test_clip_handler(monkeypatch, form_mock):
     message_mock = AsyncMock()
 
@@ -60,7 +67,7 @@ class ProxyMock:
     async def __aenter__(self):
         return self.data
 
-    async def __aexit__(self, *args):
+    async def __aexit__(self, *_args):
         pass
 
 

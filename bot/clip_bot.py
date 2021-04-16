@@ -30,9 +30,9 @@ class Form(StatesGroup):
 
 
 @dp.message_handler(commands=["start", "help", "restart"])
-async def start_handler(event: types.Message):
-    await event.answer(
-        f"Hello, {event.from_user.get_mention(as_html=True)} 👋!",
+async def start_handler(message: types.Message):
+    await message.answer(
+        f"Hello, {message.from_user.get_mention(as_html=True)} 👋!",
         parse_mode=types.ParseMode.HTML,
     )
 
