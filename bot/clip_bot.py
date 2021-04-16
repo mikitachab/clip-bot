@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 
 dotenv.load_dotenv()
 storage = MemoryStorage()
-cbot = Bot(token=os.getenv("BOT_TOKEN") or "")
+cbot = Bot(token=os.getenv("BOT_TOKEN"), validate_token=False)
 dp = Dispatcher(cbot, storage=storage)
 timecode_cb = CallbackData("start", "start_choice")
 
