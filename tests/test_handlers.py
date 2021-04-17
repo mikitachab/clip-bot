@@ -22,6 +22,7 @@ def bot_mock(monkeypatch):
 @pytest.mark.asyncio
 async def test_start_handler():
     message_mock = AsyncMock()
+    message_mock.from_user = MagicMock()
     await clip_bot.start_handler(message=message_mock)
     message_mock.answer.assert_called()
 
