@@ -19,6 +19,13 @@ def bot_mock(monkeypatch):
     return _bot_mock
 
 
+@pytest.fixture
+def send_confirm_mock(monkeypatch):
+    _mock = AsyncMock()
+    monkeypatch.setattr(clip_bot, "send_confirm", _mock)
+    return _mock
+
+
 @pytest.mark.asyncio
 async def test_start_handler():
     message_mock = AsyncMock()
@@ -140,42 +147,46 @@ def make_and_send_clip_mock(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_use_timecode_handler(bot_mock, make_and_send_clip_mock):
+async def test_use_timecode_handler(bot_mock, form_mock, send_confirm_mock):
     query_mock = MagicMock()
-    state_mock = AsyncMock()
+    state_mock = MagicMock()
+    proxy_mock = ProxyMock()
+    proxy_mock.data["url"] = "test"
+    state_mock.proxy.return_value = proxy_mock
 
     await clip_bot.use_timecode_handler(query=query_mock, state=state_mock)
 
     bot_mock.edit_message_text.assert_called()
-    state_mock.finish.assert_called()
-    make_and_send_clip_mock.assert_called()
-    assert "start" not in make_and_send_clip_mock.call_args.kwargs
+    form_mock.next.assert_called()
+    send_confirm_mock.assert_called()
 
 
 @pytest.mark.asyncio
-async def test_from_start_handler(bot_mock, make_and_send_clip_mock):
+async def test_from_start_handler(bot_mock, form_mock, send_confirm_mock):
     query_mock = MagicMock()
-    state_mock = AsyncMock()
+    state_mock = MagicMock()
+    proxy_mock = ProxyMock()
+    state_mock.proxy.return_value = proxy_mock
 
     await clip_bot.from_start_handler(query=query_mock, state=state_mock)
 
     bot_mock.edit_message_text.assert_called()
-    state_mock.finish.assert_called()
-    make_and_send_clip_mock.assert_called()
-    assert make_and_send_clip_mock.call_args.kwargs["start"] == 0
+    form_mock.next.assert_called()
+    send_confirm_mock.assert_called()
 
 
 @pytest.mark.asyncio
-async def test_process_timecode_handler(make_and_send_clip_mock):
+async def test_process_timecode_handler(form_mock, send_confirm_mock):
     message_mock = AsyncMock()
     message_mock.text = "3m2s"
-    state_mock = AsyncMock()
+    state_mock = MagicMock()
+    proxy_mock = ProxyMock()
+    state_mock.proxy.return_value = proxy_mock
 
     await clip_bot.process_timecode_handler(message=message_mock, state=state_mock)
 
-    state_mock.finish.assert_called()
-    make_and_send_clip_mock.assert_called()
-    assert make_and_send_clip_mock.call_args.kwargs["start"] == 182
+    form_mock.next.assert_called()
+    send_confirm_mock.assert_called()
 
 
 @pytest.mark.asyncio
@@ -189,3 +200,14 @@ async def test_process_timecode_handler_invalid_timecode(make_and_send_clip_mock
     state_mock.finish.assert_not_called()
     make_and_send_clip_mock.assert_not_called()
     message_mock.reply.assert_called()
+
+
+@pytest.mark.asyncio
+async def test_confirm_handler(make_and_send_clip_mock):
+    query_mock = MagicMock()
+    state_mock = AsyncMock()
+
+    await clip_bot.confirm_handler(query=query_mock, state=state_mock)
+
+    state_mock.finish.assert_called()
+    make_and_send_clip_mock.assert_called()

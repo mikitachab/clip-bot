@@ -21,7 +21,7 @@ class YTVideo:
         start = start if start is not None else self._url.timecode
         # comes from https://old.reddit.com/r/youtubedl/comments/b67xh5/downloading_part_of_a_youtube_video/ejv5ye7/
         # pylint: disable=no-member
-        cmd = f"ffmpeg -ss {start} -i $(youtube-dl -f 22 -g {self._url.value})"
+        cmd = f"ffmpeg -ss {start} -i $(youtube-dl --rm-cache-dir -f 22 -g {self._url.value})"
         cmd += f"-acodec copy -vcodec copy -t {duration} {out_file} -y"
         logging.info(cmd)
         ffmpeg_proc = subprocess.Popen(cmd, shell=True)
