@@ -3,4 +3,3 @@ venv
 .env
 .pytest_cache
 .tox
-sandbox.txt
