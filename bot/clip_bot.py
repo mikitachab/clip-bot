@@ -12,6 +12,8 @@ import dotenv
 
 import youtube as yt
 import timecode as tc
+from start_option import StartOption
+from clip_info import ClipInfo
 
 logging.basicConfig(level=logging.INFO)
 
@@ -84,24 +86,6 @@ async def provide_timecode_handler(query: types.CallbackQuery):
     await bot.send_message(query.message.chat.id, "Please provide timecode in seconds")
 
 
-class StartOption:
-    def __init__(self, option):
-        self._option = option
-
-    def text(self):
-        if self._option == StartOption.from_start():
-            return "from video start"
-        return self._option.split(";")[1] + " seconds"
-
-    @staticmethod
-    def from_start() -> str:
-        return "from_start;"
-
-    @staticmethod
-    def timecode(timecode_str) -> str:
-        return f"timecode;{timecode_str}"
-
-
 @dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
 async def use_timecode_handler(query: types.CallbackQuery, state: FSMContext):
     await bot.edit_message_text("you choosed use timecode", query.from_user.id, query.message.message_id)
@@ -166,20 +150,16 @@ def make_clip_confirm_text(clip_data: dict) -> str:
 
 async def make_and_send_clip(state: FSMContext, chat_id: int):
     async with state.proxy() as data:
-        yt_url = yt.YTUrl(data["url"])
-        if data["start"] == StartOption.from_start():
-            start = 0
-        else:
-            start = tc.make_timecode(yt_url.timecode).seconds
-        with yt.YTVideo(yt_url).make_clip_temp(data["duration"], start=start) as video_file:
+        clip_info = ClipInfo.from_data(data)
+        with yt.YTVideo(clip_info.url).make_clip_temp(clip_info.duration, start=clip_info.start) as video_file:
             await bot.send_video(chat_id, open(video_file, "rb"))
 
 
 def get_confirm_keyboard():
-    confirm_keyboard = types.InlineKeyboardMarkup()
-    confirm_keyboard.add(types.InlineKeyboardButton("create", callback_data=confirm_cb.new(confirm_choice="create")))
-    confirm_keyboard.add(types.InlineKeyboardButton("cancel", callback_data=confirm_cb.new(confirm_choice="cancel")))
-    return confirm_keyboard
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("create", callback_data=confirm_cb.new(confirm_choice="create")))
+    keyboard.add(types.InlineKeyboardButton("cancel", callback_data=confirm_cb.new(confirm_choice="cancel")))
+    return keyboard
 
 
 def get_keyboard(timecode: str):
