@@ -51,6 +51,9 @@ class FormattedTimecode(TimecodeInterface):
         self._extract_timecode()
         return self._seconds + self._minutes * 60 + self._houres * 3600
 
+    def __str__(self) -> str:
+        return self._text
+
 
 def make_timecode(text: str):
     if re.match(SecondsTimecode.PATTERN, text):

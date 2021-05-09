@@ -5,7 +5,7 @@ class StartOption:
     def text(self) -> str:
         if self._option == StartOption.from_start():
             return "from video start"
-        return self._option.split(";")[1] + " seconds"
+        return self._option.split(";")[1]
 
     @staticmethod
     def from_start() -> str:

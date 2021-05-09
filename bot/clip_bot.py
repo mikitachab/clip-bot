@@ -14,6 +14,7 @@ import youtube as yt
 import timecode as tc
 from start_option import StartOption
 from clip_info import ClipInfo
+from text import text as t
 
 logging.basicConfig(level=logging.INFO)
 
@@ -43,7 +44,7 @@ async def start_handler(message: types.Message):
 @dp.message_handler(commands=["clip"])
 async def clip_handler(message: types.Message):
     await Form.url.set()
-    await message.reply("Hi, please send video url")
+    await message.reply(t.url.question)
 
 
 @dp.message_handler(state="*", commands="cancel")
@@ -55,7 +56,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
     logging.info("Cancelling state %r", current_state)
     await state.finish()
-    await message.reply("Cancelled.", reply_markup=types.ReplyKeyboardRemove())
+    await message.reply(t.cancelled, reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(state=Form.url)
@@ -64,31 +65,31 @@ async def process_url_handler(message: types.Message, state: FSMContext):
         data["url"] = message.text
 
     await Form.next()
-    await message.reply("How long clip should be")
+    await message.reply(t.duration.question)
 
 
 @dp.message_handler(state=Form.duration)
 async def process_duration_handler(message: types.Message, state: FSMContext):
     if not message.text.isdigit():
-        await message.reply("Duration gotta be a number.\nHow long clip should be in seconds? (digits only)")
+        await message.reply(t.duration.invalid)
     else:
         async with state.proxy() as data:
             data["duration"] = int(message.text)
             yt_url = yt.YTUrl(data["url"])
 
         await Form.next()
-        await message.reply("Start question?", reply_markup=get_keyboard(yt_url.timecode))
+        await message.reply(t.start.question, reply_markup=get_keyboard(yt_url.timecode))
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
 async def provide_timecode_handler(query: types.CallbackQuery):
-    await bot.edit_message_text("you choosed to provide timecode", query.from_user.id, query.message.message_id)
-    await bot.send_message(query.message.chat.id, "Please provide timecode in seconds")
+    await bot.edit_message_text(t.start.choice.provide_timecode, query.from_user.id, query.message.message_id)
+    await bot.send_message(query.message.chat.id, t.start.timecode.question)
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
 async def use_timecode_handler(query: types.CallbackQuery, state: FSMContext):
-    await bot.edit_message_text("you choosed use timecode", query.from_user.id, query.message.message_id)
+    await bot.edit_message_text(t.start.choice.url_timecode, query.from_user.id, query.message.message_id)
     async with state.proxy() as data:
         data["start"] = StartOption.timecode(yt.YTUrl(data["url"]).timecode)
     await Form.next()
@@ -97,7 +98,7 @@ async def use_timecode_handler(query: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="from_start"), state=Form.start)
 async def from_start_handler(query: types.CallbackQuery, state: FSMContext):
-    await bot.edit_message_text("you choosed from start", query.from_user.id, query.message.message_id)
+    await bot.edit_message_text(t.start.choice.from_start, query.from_user.id, query.message.message_id)
     async with state.proxy() as data:
         data["start"] = StartOption.from_start()
     await Form.next()
@@ -109,7 +110,7 @@ async def process_timecode_handler(message: types.Message, state: FSMContext):
     try:
         timecode = tc.make_timecode(message.text)
     except tc.InvalidTimecodeError:
-        await message.reply("Timecode should has valid format\nPlease provide timecode")
+        await message.reply(t.start.timecode.invalid)
     else:
         async with state.proxy() as data:
             data["start"] = StartOption.timecode(timecode)
@@ -131,7 +132,7 @@ async def confirm_cancel_handle(query: types.CallbackQuery, state: FSMContext):
 
     logging.info("Cancelling state %r", current_state)
     await state.finish()
-    await query.message.reply("Cancelled.", reply_markup=types.ReplyKeyboardRemove())
+    await query.message.reply(t.cancelled, reply_markup=types.ReplyKeyboardRemove())
 
 
 async def send_confirm(chat_id: int, state: FSMContext):
@@ -142,10 +143,9 @@ async def send_confirm(chat_id: int, state: FSMContext):
 
 
 def make_clip_confirm_text(clip_data: dict) -> str:
-    text = f"URL: {clip_data['url']}\n"
-    text += f"Duration: {clip_data['duration']} seconds\n"
-    text += f"Start: {StartOption(clip_data['start']).text()}\n"
-    return text
+    return t.confirm.format(
+        url=clip_data["url"], duration=clip_data["duration"], start=StartOption(clip_data["start"]).text()
+    )
 
 
 async def make_and_send_clip(state: FSMContext, chat_id: int):

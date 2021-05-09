@@ -7,7 +7,9 @@ certifi==2020.12.5
 chardet==4.0.0; python_version >= "3.6" and python_full_version < "3.0.0" or python_full_version >= "3.5.0" and python_version >= "3.6"
 idna==3.1; python_version >= "3.6"
 multidict==5.1.0; python_version >= "3.6"
+munch==2.5.0
 python-dotenv==0.15.0
 pytz==2021.1; python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.4.0"
+six==1.16.0; python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.3.0"
 typing-extensions==3.7.4.3; python_version >= "3.6"
 yarl==1.6.3; python_version >= "3.6"
