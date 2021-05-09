@@ -17,5 +17,6 @@ class ClipInfo:
         if data["start"] == StartOption.from_start():
             start = 0
         else:
-            start = tc.make_timecode(yt_url.timecode).seconds
+            timecode_str = StartOption(data["start"]).text()
+            start = tc.make_timecode(timecode_str).seconds
         return ClipInfo(url=yt_url, duration=data["duration"], start=start)
