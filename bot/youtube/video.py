@@ -23,9 +23,8 @@ class YTVideo:
         # pylint: disable=no-member
         cmd = f"ffmpeg -ss {start} -i $(youtube-dl --rm-cache-dir -f 22 -g {self._url.value})"
         cmd += f" -acodec copy -vcodec copy -t {duration} {out_file} -y"
-        logging.info(cmd)
-        ffmpeg_proc = subprocess.Popen(cmd, shell=True)
-        ffmpeg_proc.wait()
+        with subprocess.Popen(cmd, shell=True):
+            logging.info(cmd)
 
 
 @contextlib.contextmanager
