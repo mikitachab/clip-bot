@@ -8,28 +8,28 @@ text = Munch(
             }
         ),
         "cancelled": "Cancelled.",
-        "duration": Munch(
-            {
-                "question": "How long clip should be?",
-                "invalid": "Duration gotta be a number.\nHow long clip should be in seconds? (digits only)",
-            }
-        ),
         "start": Munch(
             {
-                "question": "Start question?",  # FIXME pylint: disable=fixme
+                "question": "Please select time the clip should start at",
                 "choice": Munch(
                     {
-                        "provide_timecode": "you choosed to provide timecode",
-                        "url_timecode": "you choosed use timecode",
-                        "from_start": "you choosed from start",
+                        "provide_timecode": "you chose to provide timecode",
+                        "url_timecode": "you chose to use timecode embedded in url",
+                        "from_start": "you chose to clip from start",
                     }
                 ),
                 "timecode": Munch(
                     {
                         "question": "Please provide timecode in seconds",
-                        "invalid": "Timecode should has valid format\nPlease provide timecode",
+                        "invalid": "Timecode should have valid format\nPlease provide timecode (e.g. 5m20s)",
                     }
                 ),
+            }
+        ),
+        "duration": Munch(
+            {
+                "question": "How long the clip should be in seconds?",
+                "invalid": "Duration should be a number.\nHow long the clip should be in seconds? (digits only)",
             }
         ),
         # fmt: off
