@@ -120,6 +120,7 @@ async def process_timecode_handler(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(confirm_cb.filter(confirm_choice="create"), state=Form.confirm)
 async def confirm_handler(query: types.CallbackQuery, state: FSMContext):
+    await bot.edit_message_text(t.clip.creating, query.from_user.id, query.message.message_id)
     await make_and_send_clip(state, query.message.chat.id)
     await state.finish()
 
@@ -132,7 +133,7 @@ async def confirm_cancel_handle(query: types.CallbackQuery, state: FSMContext):
 
     logging.info("Cancelling state %r", current_state)
     await state.finish()
-    await query.message.reply(t.cancelled, reply_markup=types.ReplyKeyboardRemove())
+    await bot.edit_message_text(t.cancelled, query.from_user.id, query.message.message_id)
 
 
 async def send_confirm(chat_id: int, state: FSMContext):

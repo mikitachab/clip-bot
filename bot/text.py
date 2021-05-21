@@ -28,5 +28,8 @@ text = munchify(
                    "Start: {start}\n"
                    "Create clip?",
         # fmt: on
+        "clip": {
+            "creating": "Creating clip"
+        }
     }
 )
