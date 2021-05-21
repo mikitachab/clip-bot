@@ -27,8 +27,8 @@ dp = Dispatcher(bot, storage=storage)
 
 class Form(StatesGroup):
     url = State()
-    duration = State()
     start = State()
+    duration = State()
     confirm = State()
 
 
@@ -61,10 +61,12 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 @dp.message_handler(state=Form.url)
 async def process_url_handler(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data["url"] = message.text
+        url = message.text
+        data["url"] = url
+        yt_url = yt.YTUrl(url)
 
     await Form.next()
-    await message.reply(t.duration.question)
+    await message.reply(t.start.question, reply_markup=timecode_keyboard(yt_url.timecode))
 
 
 @dp.message_handler(state=Form.duration)
@@ -74,10 +76,9 @@ async def process_duration_handler(message: types.Message, state: FSMContext):
     else:
         async with state.proxy() as data:
             data["duration"] = int(message.text)
-            yt_url = yt.YTUrl(data["url"])
 
         await Form.next()
-        await message.reply(t.start.question, reply_markup=timecode_keyboard(yt_url.timecode))
+        await send_confirm(message.chat.id, state)
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
@@ -92,7 +93,7 @@ async def use_timecode_handler(query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data["start"] = StartOption.timecode(yt.YTUrl(data["url"]).timecode)
     await Form.next()
-    await send_confirm(query.message.chat.id, state)
+    await query.message.reply(t.duration.question)
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="from_start"), state=Form.start)
@@ -101,7 +102,7 @@ async def from_start_handler(query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data["start"] = StartOption.from_start()
     await Form.next()
-    await send_confirm(query.message.chat.id, state)
+    await query.message.reply(t.duration.question)
 
 
 @dp.message_handler(state=Form.start)
