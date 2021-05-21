@@ -6,7 +6,6 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher import FSMContext
-from aiogram.utils.callback_data import CallbackData
 
 import dotenv
 
@@ -14,6 +13,8 @@ import youtube as yt
 import timecode as tc
 from start_option import StartOption
 from clip_info import ClipInfo
+from callback_data import timecode_cb, confirm_cb
+from keyboard import confirm_keyboard, timecode_keyboard
 from text import text as t
 
 logging.basicConfig(level=logging.INFO)
@@ -22,8 +23,6 @@ dotenv.load_dotenv()
 storage = MemoryStorage()
 bot = Bot(token=os.getenv("BOT_TOKEN"), validate_token=False)
 dp = Dispatcher(bot, storage=storage)
-timecode_cb = CallbackData("start", "start_choice")
-confirm_cb = CallbackData("confirm", "confirm_choice")
 
 
 class Form(StatesGroup):
@@ -78,7 +77,7 @@ async def process_duration_handler(message: types.Message, state: FSMContext):
             yt_url = yt.YTUrl(data["url"])
 
         await Form.next()
-        await message.reply(t.start.question, reply_markup=get_keyboard(yt_url.timecode))
+        await message.reply(t.start.question, reply_markup=timecode_keyboard(yt_url.timecode))
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="provide_timecode"), state=Form.start)
@@ -139,7 +138,7 @@ async def send_confirm(chat_id: int, state: FSMContext):
     async with state.proxy() as data:
         text = make_clip_confirm_text(data)
 
-    await bot.send_message(chat_id, text, reply_markup=get_confirm_keyboard())
+    await bot.send_message(chat_id, text, reply_markup=confirm_keyboard())
 
 
 def make_clip_confirm_text(clip_data: dict) -> str:
@@ -153,29 +152,3 @@ async def make_and_send_clip(state: FSMContext, chat_id: int):
         clip_info = ClipInfo.from_data(data)
         with yt.YTVideo(clip_info.url).make_clip_temp(clip_info.duration, start=clip_info.start) as video_file:
             await bot.send_video(chat_id, open(video_file, "rb"))
-
-
-def get_confirm_keyboard():
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(types.InlineKeyboardButton("create", callback_data=confirm_cb.new(confirm_choice="create")))
-    keyboard.add(types.InlineKeyboardButton("cancel", callback_data=confirm_cb.new(confirm_choice="cancel")))
-    return keyboard
-
-
-def get_keyboard(timecode: str):
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(types.InlineKeyboardButton("from start", callback_data=timecode_cb.new(start_choice="from_start")))
-    keyboard.add(
-        types.InlineKeyboardButton(
-            "provide timecode",
-            callback_data=timecode_cb.new(start_choice="provide_timecode"),
-        )
-    )
-    if timecode and tc.is_valid_timecode(timecode):
-        keyboard.add(
-            types.InlineKeyboardButton(
-                f"use timecode ({timecode})",
-                callback_data=timecode_cb.new(start_choice="use_timecode"),
-            )
-        )
-    return keyboard
