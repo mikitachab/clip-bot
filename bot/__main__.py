@@ -5,10 +5,10 @@ from aiogram import executor
 from clip_bot import dp as dispatcher
 
 
-async def on_shutdown(dispatcher):
+async def on_shutdown(dp):
     logging.info("closing storage connection")
-    await dispatcher.storage.close()
-    await dispatcher.storage.wait_closed()
+    await dp.storage.close()
+    await dp.storage.wait_closed()
 
 
 def main():

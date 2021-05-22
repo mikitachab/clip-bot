@@ -19,22 +19,24 @@ from callback_data import timecode_cb, confirm_cb
 from keyboard import confirm_keyboard, timecode_keyboard
 from text import text as t
 
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--storage", choices=["redis", "memory"], default="memory")
-args = parser.parse_args()
 dotenv.load_dotenv()
+
+if not os.getenv("TEST"):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--storage", choices=["redis", "memory"], default="memory")
+    args = parser.parse_args()
+    storage_type = args.storage
+else:
+    storage_type = "memory"
+
+storage = {
+    "memory": MemoryStorage(),
+    "redis": RedisStorage(host=os.getenv("REDIS_URL"), port=int(os.getenv("REDIS_PORT"))),
+}[storage_type]
+
 
 logging.basicConfig(level=logging.INFO, filename="clipbot.log", filemode="a")
 
-def get_storage(storage_type: str):
-    return {
-        "memory": MemoryStorage(),
-        "redis": RedisStorage(host=os.getenv("REDIS_URL"), port=int(os.getenv("REDIS_PORT"))),
-    }[storage_type]
-
-
-storage = get_storage(args.storage)
 bot = Bot(token=os.getenv("BOT_TOKEN"), validate_token=False)
 dp = Dispatcher(bot, storage=storage)
 
@@ -165,7 +167,7 @@ def make_clip_confirm_text(clip_data: dict) -> str:
 
 async def make_and_send_clip(state: FSMContext, chat_id: int):
     async with state.proxy() as data:
-        logging.info("creating clip: " + str(data))
+        logging.info("creating clip: %s", data)
         clip_info = ClipInfo.from_data(data)
         with yt.YTVideo(clip_info.url).make_clip_temp(clip_info.duration, start=clip_info.start) as video_file:
             await bot.send_video(chat_id, open(video_file, "rb"))
