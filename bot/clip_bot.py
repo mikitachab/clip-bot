@@ -105,6 +105,8 @@ async def process_duration_handler(message: types.Message, state: FSMContext):
 async def provide_timecode_handler(query: types.CallbackQuery):
     await bot.edit_message_text(t.start.choice.provide_timecode, query.from_user.id, query.message.message_id)
     await bot.send_message(query.message.chat.id, t.start.timecode.question)
+    await Form.next()
+    await query.message.reply(t.duration.question)
 
 
 @dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
