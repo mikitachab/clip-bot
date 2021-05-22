@@ -174,7 +174,7 @@ async def test_from_start_handler(bot_mock, form_mock, send_confirm_mock):
 
 
 @pytest.mark.asyncio
-async def test_process_timecode_handler(form_mock, send_confirm_mock):
+async def test_process_timecode_handler(form_mock):
     message_mock = AsyncMock()
     message_mock.text = "3m2s"
     state_mock = MagicMock()
@@ -184,7 +184,6 @@ async def test_process_timecode_handler(form_mock, send_confirm_mock):
     await clip_bot.process_timecode_handler(message=message_mock, state=state_mock)
 
     form_mock.next.assert_called()
-    send_confirm_mock.assert_called()
 
 
 @pytest.mark.asyncio
@@ -197,7 +196,6 @@ async def test_process_timecode_handler_invalid_timecode(make_and_send_clip_mock
 
     state_mock.finish.assert_not_called()
     make_and_send_clip_mock.assert_not_called()
-    message_mock.reply.assert_called()
 
 
 @pytest.mark.asyncio

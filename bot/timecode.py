@@ -17,11 +17,15 @@ class SecondsTimecode(TimecodeInterface):
     PATTERN = r"^\d+$"
 
     def __init__(self, text: str):
+        self._text = text
         self._seconds = int(text)
 
     @property
     def seconds(self) -> int:
         return self._seconds
+
+    def __str__(self) -> str:
+        return self._text
 
 
 class FormattedTimecode(TimecodeInterface):

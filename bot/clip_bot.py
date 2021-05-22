@@ -21,7 +21,7 @@ from keyboard import confirm_keyboard, timecode_keyboard
 from text import text as t
 
 dotenv.load_dotenv()
-logging.basicConfig(level=logging.INFO, filename="clipbot.log", filemode="a")
+logging.basicConfig(level=logging.INFO)
 
 if not os.getenv("TEST"):
     parser = argparse.ArgumentParser()
@@ -107,7 +107,6 @@ async def provide_timecode_handler(query: types.CallbackQuery):
     await bot.send_message(query.message.chat.id, t.start.timecode.question)
 
 
-
 @dp.callback_query_handler(timecode_cb.filter(start_choice="use_timecode"), state=Form.start)
 async def use_timecode_handler(query: types.CallbackQuery, state: FSMContext):
     await bot.edit_message_text(t.start.choice.url_timecode, query.from_user.id, query.message.message_id)
@@ -136,7 +135,7 @@ async def process_timecode_handler(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
             data["start"] = StartOption.timecode(timecode)
         await Form.next()
-        await send_confirm(message.chat.id, state)
+        await message.reply(t.duration.question)
 
 
 @dp.callback_query_handler(confirm_cb.filter(confirm_choice="create"), state=Form.confirm)
@@ -165,7 +164,6 @@ async def confirm_cancel_handle(query: types.CallbackQuery, state: FSMContext):
 async def send_confirm(chat_id: int, state: FSMContext):
     async with state.proxy() as data:
         text = make_clip_confirm_text(data)
-
     await bot.send_message(chat_id, text, reply_markup=confirm_keyboard())
 
 
