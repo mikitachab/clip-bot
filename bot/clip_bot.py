@@ -25,7 +25,7 @@ parser.add_argument("--storage", choices=["redis", "memory"], default="memory")
 args = parser.parse_args()
 dotenv.load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, filename="clipbot.log", filemode="a")
 
 def get_storage(storage_type: str):
     return {
@@ -165,6 +165,7 @@ def make_clip_confirm_text(clip_data: dict) -> str:
 
 async def make_and_send_clip(state: FSMContext, chat_id: int):
     async with state.proxy() as data:
+        logging.info("creating clip: " + str(data))
         clip_info = ClipInfo.from_data(data)
         with yt.YTVideo(clip_info.url).make_clip_temp(clip_info.duration, start=clip_info.start) as video_file:
             await bot.send_video(chat_id, open(video_file, "rb"))
