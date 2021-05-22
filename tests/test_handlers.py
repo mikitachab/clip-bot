@@ -96,20 +96,20 @@ async def test_process_url_handler(form_mock):
 
 
 @pytest.mark.asyncio
-async def test_process_duration_handler(form_mock):
+async def test_process_duration_handler(form_mock, bot_mock):
     text = "42"
     message_mock = AsyncMock()
     message_mock.text = text
     state_mock = MagicMock()
     proxy_mock = ProxyMock()
     proxy_mock.data["url"] = "dummy_url"
+    proxy_mock.data["start"] = "from_start;"
     state_mock.proxy.return_value = proxy_mock
 
     await clip_bot.process_duration_handler(message=message_mock, state=state_mock)
 
     form_mock.next.assert_called()
-    message_mock.reply.assert_called()
-    assert "reply_markup" in message_mock.reply.call_args.kwargs.keys()
+    bot_mock.send_message.assert_called()
     assert proxy_mock.data["duration"] == 42
 
 
@@ -148,7 +148,7 @@ def make_and_send_clip_mock(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_use_timecode_handler(bot_mock, form_mock, send_confirm_mock):
-    query_mock = MagicMock()
+    query_mock = AsyncMock()
     state_mock = MagicMock()
     proxy_mock = ProxyMock()
     proxy_mock.data["url"] = "test"
@@ -158,12 +158,11 @@ async def test_use_timecode_handler(bot_mock, form_mock, send_confirm_mock):
 
     bot_mock.edit_message_text.assert_called()
     form_mock.next.assert_called()
-    send_confirm_mock.assert_called()
 
 
 @pytest.mark.asyncio
 async def test_from_start_handler(bot_mock, form_mock, send_confirm_mock):
-    query_mock = MagicMock()
+    query_mock = AsyncMock()
     state_mock = MagicMock()
     proxy_mock = ProxyMock()
     state_mock.proxy.return_value = proxy_mock
@@ -172,7 +171,6 @@ async def test_from_start_handler(bot_mock, form_mock, send_confirm_mock):
 
     bot_mock.edit_message_text.assert_called()
     form_mock.next.assert_called()
-    send_confirm_mock.assert_called()
 
 
 @pytest.mark.asyncio
@@ -203,7 +201,7 @@ async def test_process_timecode_handler_invalid_timecode(make_and_send_clip_mock
 
 
 @pytest.mark.asyncio
-async def test_confirm_handler(make_and_send_clip_mock):
+async def test_confirm_handler(make_and_send_clip_mock, bot_mock):
     query_mock = MagicMock()
     state_mock = AsyncMock()
 
