@@ -66,7 +66,7 @@ async def clip_handler(message: types.Message):
     await message.reply(t.url.question)
 
 
-@dp.message_handler(state="*", commands="cancel")
+@dp.message_handler(state="*", commands=["cancel"])
 @dp.message_handler(Text(equals="cancel", ignore_case=True), state="*")
 async def cancel_handler(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
