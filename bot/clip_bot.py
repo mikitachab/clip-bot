@@ -8,6 +8,7 @@ from aiogram.contrib.fsm_storage.redis import RedisStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher import FSMContext
+from aiogram.utils.exceptions import BadRequest
 
 import dotenv
 
@@ -20,6 +21,7 @@ from keyboard import confirm_keyboard, timecode_keyboard
 from text import text as t
 
 dotenv.load_dotenv()
+logging.basicConfig(level=logging.INFO, filename="clipbot.log", filemode="a")
 
 if not os.getenv("TEST"):
     parser = argparse.ArgumentParser()
@@ -29,16 +31,18 @@ if not os.getenv("TEST"):
 else:
     storage_type = "memory"
 
-storage = {
-    "memory": MemoryStorage(),
-    "redis": RedisStorage(host=os.getenv("REDIS_URL"), port=int(os.getenv("REDIS_PORT"))),
-}[storage_type]
 
+def make_storage():
+    if storage_type == "redis":
+        return RedisStorage(
+            host=os.getenv("REDIS_URL"),
+            port=int(os.getenv("REDIS_PORT")),
+        )
+    return MemoryStorage()
 
-logging.basicConfig(level=logging.INFO, filename="clipbot.log", filemode="a")
 
 bot = Bot(token=os.getenv("BOT_TOKEN"), validate_token=False)
-dp = Dispatcher(bot, storage=storage)
+dp = Dispatcher(bot, storage=make_storage())
 
 
 class Form(StatesGroup):
@@ -137,8 +141,13 @@ async def process_timecode_handler(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(confirm_cb.filter(confirm_choice="create"), state=Form.confirm)
 async def confirm_handler(query: types.CallbackQuery, state: FSMContext):
     await bot.edit_message_text(t.clip.creating, query.from_user.id, query.message.message_id)
-    await make_and_send_clip(state, query.message.chat.id)
-    await state.finish()
+    try:
+        await make_and_send_clip(state, query.message.chat.id)
+    except BadRequest as exc:
+        logging.exception(exc)
+        await bot.send_message(query.message.chat.id, t.error)
+    finally:
+        await state.finish()
 
 
 @dp.callback_query_handler(confirm_cb.filter(confirm_choice="cancel"), state=Form.confirm)

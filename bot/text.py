@@ -29,5 +29,6 @@ text = munchify(
                    "Create clip?",
         # fmt: on
         "clip": {"creating": "Creating clip"},
+        "error": "Something went wrong, bot failed",
     }
 )
