@@ -3,6 +3,7 @@ import logging
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.contrib.fsm_storage.redis import RedisStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher import FSMContext
@@ -17,10 +18,9 @@ from callback_data import timecode_cb, confirm_cb
 from keyboard import confirm_keyboard, timecode_keyboard
 from text import text as t
 
-logging.basicConfig(level=logging.INFO)
 
 dotenv.load_dotenv()
-storage = MemoryStorage()
+storage = RedisStorage()
 bot = Bot(token=os.getenv("BOT_TOKEN"), validate_token=False)
 dp = Dispatcher(bot, storage=storage)
 
