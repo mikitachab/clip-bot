@@ -14,7 +14,7 @@ text = munchify(
                 "from_start": "you chose to clip from start",
             },
             "timecode": {
-                "question": "Please provide timecode in seconds",
+                "question": "Please provide timecode (e.g. 5s or 5m20s)",
                 "invalid": "Timecode should have valid format\nPlease provide timecode (e.g. 5m20s)",
             },
         },
