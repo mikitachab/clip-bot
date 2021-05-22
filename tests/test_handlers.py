@@ -130,13 +130,14 @@ async def test_process_duration_handler_invalid_input(form_mock):
 
 
 @pytest.mark.asyncio
-async def test_provide_timecode(bot_mock):
-    query_mock = MagicMock()
+async def test_provide_timecode(bot_mock, form_mock):
+    query_mock = AsyncMock()
 
     await clip_bot.provide_timecode_handler(query=query_mock)
 
     bot_mock.edit_message_text.assert_called()
     bot_mock.send_message.assert_called()
+    form_mock.next.assert_called()
 
 
 @pytest.fixture
