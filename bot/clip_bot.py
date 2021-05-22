@@ -1,3 +1,4 @@
+import argparse
 import os
 import logging
 
@@ -19,8 +20,21 @@ from keyboard import confirm_keyboard, timecode_keyboard
 from text import text as t
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--storage", choices=["redis", "memory"], default="memory")
+args = parser.parse_args()
 dotenv.load_dotenv()
-storage = RedisStorage()
+
+logging.basicConfig(level=logging.INFO)
+
+def get_storage(storage_type: str):
+    return {
+        "memory": MemoryStorage(),
+        "redis": RedisStorage(host=os.getenv("REDIS_URL"), port=int(os.getenv("REDIS_PORT"))),
+    }[storage_type]
+
+
+storage = get_storage(args.storage)
 bot = Bot(token=os.getenv("BOT_TOKEN"), validate_token=False)
 dp = Dispatcher(bot, storage=storage)
 
