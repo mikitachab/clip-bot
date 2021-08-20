@@ -178,4 +178,5 @@ async def make_and_send_clip(state: FSMContext, chat_id: int):
         logging.info("creating clip: %s", data)
         clip_info = ClipInfo.from_data(data)
         with yt.YTVideo(clip_info.url).make_clip_temp(clip_info.duration, start=clip_info.start) as video_file:
-            await bot.send_video(chat_id, open(video_file, "rb"))
+            with open(video_file, "rb") as file:
+                await bot.send_video(chat_id, file)
