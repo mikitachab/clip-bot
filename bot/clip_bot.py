@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.fsm_storage.redis import RedisStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.dispatcher.filters import Text
+from aiogram.dispatcher.filters import Text, Regexp
 from aiogram.dispatcher import FSMContext
 from aiogram.utils.exceptions import BadRequest
 
@@ -16,8 +16,8 @@ import youtube as yt
 import timecode as tc
 from start_option import StartOption
 from clip_info import ClipInfo
-from callback_data import timecode_cb, confirm_cb
-from keyboard import confirm_keyboard, timecode_keyboard
+from callback_data import timecode_cb, confirm_cb, start_clip_cb
+from keyboard import confirm_keyboard, timecode_keyboard, start_clip_keyboard
 from text import text as t
 
 dotenv.load_dotenv()
@@ -58,6 +58,34 @@ async def start_handler(message: types.Message):
         f"Hello, {message.from_user.get_mention(as_html=True)} 👋!",
         parse_mode=types.ParseMode.HTML,
     )
+
+
+@dp.message_handler(Regexp(yt.YTUrl.YT_URL_RE))
+async def yt_url_message_handler(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state is None:
+        async with state.proxy() as data:
+            data["url_candidate"] = message.text
+        await message.reply("create clip from sent URL?", reply_markup=start_clip_keyboard())
+
+
+@dp.callback_query_handler(start_clip_cb.filter(start_clip_choice="create"))
+async def create_clip(query: types.CallbackQuery, state: FSMContext):
+    async with state.proxy() as data:
+        url = data["url_candidate"]
+        data["url"] = url
+        del data["url_candidate"]
+        yt_url = yt.YTUrl(url)
+    await bot.edit_message_text("chose create clip", query.from_user.id, query.message.message_id)
+    await Form.start.set()
+    await bot.send_message(query.message.chat.id, t.start.question, reply_markup=timecode_keyboard(yt_url.timecode))
+
+
+@dp.callback_query_handler(start_clip_cb.filter(start_clip_choice="cancel"))
+async def reject_clip_creation(query: types.CallbackQuery, state: FSMContext):
+    async with state.proxy() as data:
+        del data["url_candidate"]
+    await bot.edit_message_text("cancelled", query.from_user.id, query.message.message_id)
 
 
 @dp.message_handler(commands=["clip"])

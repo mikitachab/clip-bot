@@ -1,6 +1,6 @@
 from aiogram import types
 
-from callback_data import timecode_cb, confirm_cb
+from callback_data import timecode_cb, confirm_cb, start_clip_cb
 import timecode as tc
 
 
@@ -27,4 +27,11 @@ def timecode_keyboard(timecode: str):
                 callback_data=timecode_cb.new(start_choice="use_timecode"),
             )
         )
+    return keyboard
+
+
+def start_clip_keyboard():
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("create", callback_data=start_clip_cb.new(start_clip_choice="create")))
+    keyboard.add(types.InlineKeyboardButton("no", callback_data=start_clip_cb.new(start_clip_choice="cancel")))
     return keyboard
